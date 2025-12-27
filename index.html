@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAZA BLOGS - Future</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6366f1; --accent: #06b6d4; --glass-bg: rgba(255, 255, 255, 0.03); --glass-border: rgba(255, 255, 255, 0.08); --text: #ffffff; --text-muted: #94a3b8; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
+        body { background-color: #020204; color: var(--text); overflow-x: hidden; }
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; }
+        .blur-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 2, 4, 0.6); backdrop-filter: blur(80px); -webkit-backdrop-filter: blur(80px); z-index: -1; pointer-events: none; }
+        
+        /* Nav */
+        .glass-nav { position: fixed; top: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border); z-index: 100; flex-wrap: wrap; }
+        .logo { font-size: 1.5rem; font-weight: 700; letter-spacing: -1px; } .logo span { color: var(--accent); }
+        .nav-links { display: flex; list-style: none; gap: 1.5rem; align-items: center;} 
+        .nav-links a { text-decoration: none; color: var(--text-muted); transition: 0.3s; cursor: pointer; font-size: 0.95rem; } .nav-links a:hover { color: #fff; }
+        
+        .btn-login { padding: 0.5rem 1.2rem; border: 1px solid var(--glass-border); border-radius: 50px; background: rgba(255,255,255,0.05); color: #fff; text-decoration: none; transition: 0.3s; font-size: 0.9rem; }
+        .btn-login:hover { background: var(--primary); border-color: var(--primary); }
+
+        .btn-create { background: var(--glass-bg); color: var(--accent); border: 1px solid var(--accent); padding: 0.5rem 1rem; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.3s; }
+        .btn-create:hover { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); }
+
+        /* Hero */
+        .hero { min-height: 85vh; display: flex; align-items: center; justify-content: center; text-align: center; margin-top: 60px; padding: 20px; }
+        .hero h1 { font-size: 4.5rem; line-height: 1.1; margin-bottom: 1.5rem; }
+        .gradient-text { background: linear-gradient(to right, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* BIG COMMUNITY BUTTON */
+        .btn-hero-big {
+            display: inline-block; margin-top: 2rem;
+            padding: 1.2rem 3rem; font-size: 1.2rem; font-weight: bold; letter-spacing: 1px;
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            color: #fff; text-decoration: none; border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4); border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .btn-hero-big:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 20px 50px rgba(99, 102, 241, 0.6); }
+
+        /* Grid */
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; padding-bottom: 5rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        
+        /* Cards */
+        .glass-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; transition: 0.3s; }
+        .glass-card:hover { transform: translateY(-10px); border-color: rgba(255,255,255,0.2); }
+        .card-image { height: 200px; background-size: cover; background-position: center; }
+        .card-content { padding: 1.5rem; }
+        .tag { color: var(--accent); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        .glass-card h3 { margin: 0.5rem 0; font-size: 1.4rem; }
+        .glass-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .read-btn { background: none; border: none; color: #fff; cursor: pointer; font-size: 1rem; font-weight: 500; display: flex; align-items: center; gap: 5px; } .read-btn:hover { color: var(--accent); }
+
+        /* Popup */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; display: none; opacity: 0; transition: opacity 0.4s ease; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content { width: 100%; max-width: 800px; max-height: 80vh; overflow-y: auto; background: #0a0a0a; border: 1px solid var(--glass-border); border-radius: 24px; padding: 0; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); transform: scale(0.7) translateY(50px); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-overlay.active .modal-content { transform: scale(1) translateY(0); opacity: 1; }
+        .close-btn { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; transition: 0.3s; z-index: 10; }
+        .modal-img { width: 100%; height: 250px; object-fit: cover; }
+        .modal-body { padding: 1.5rem; }
+        .modal-body h2 { font-size: 2rem; margin-bottom: 1rem; color: var(--primary); line-height: 1.2; }
+
+        /* --- MOBILE RESPONSIVE CSS --- */
+        @media (max-width: 768px) {
+            .glass-nav { padding: 1rem; flex-direction: column; gap: 15px; }
+            .nav-links { gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; }
+            .hero h1 { font-size: 3rem; }
+            .btn-hero-big { padding: 1rem 2rem; font-size: 1rem; width: 100%; }
+            .grid { grid-template-columns: 1fr; }
+            .container { padding: 1rem; padding-top: 10rem; } /* Add padding top so nav doesn't cover content */
+            .modal-content { max-height: 70vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="bg-canvas"></canvas>
+    <div class="blur-overlay"></div>
+
+    <nav class="glass-nav">
+        <div class="logo">HAZA <span>BLOGS</span></div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="other.html">Community</a></li>
+            <li><a href="editor.html" class="btn-create">Write Article</a></li>
+            <li><a href="login.html" class="btn-login" id="authBtn">Sign In</a></li>
+        </ul>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <h1>For The <br> <span class="gradient-text">Future Genaration</span></h1>
+            <p style="color: #ccc; margin-top: 10px; max-width: 600px; margin-left:auto; margin-right:auto;">Exploring the mind of the machine through liquid interfaces.</p>
+            
+            <!-- BIG BUTTON -->
+            <a href="other.html" class="btn-hero-big">
+                EXPLORE COMMUNITY ARTICLES &rarr;
+            </a>
+        </div>
+    </header>
+
+    <section class="container">
+        <h2 style="margin-bottom: 20px; color: #aaa; text-transform: uppercase; letter-spacing: 2px; font-size: 1rem;">Featured Stories</h2>
+        <div class="grid">
+            <article class="glass-card">
+                <div class="card-image" style="background-image: url('https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1000');"></div>
+                <div class="card-content">
+                    <span class="tag">AI Revolution</span>
+                    <h3>Generative AI Explained</h3>
+                    <p>How LLMs like GPT-4 are changing the way we code and create content.</p>
+                    <button class="read-btn" onclick="openModal('Generative AI Explained', 'Generative AI refers to deep-learning models that can create high-quality text, images, and other content based on the data they were trained on.\n\nIn recent years, LLMs have transformed industries by automating content creation, coding, and customer support.', 'https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=1000')">Read Article &rarr;</button>
+                </div>
+            </article>
+
+            <article class="glass-card">
+                <div class="card-image" style="background-image: url('https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000');"></div>
+                <div class="card-content">
+                    <span class="tag">Future Tech</span>
+                    <h3>Neural Networks</h3>
+                    <p>Understanding the brain-inspired layers behind modern artificial intelligence.</p>
+                    <button class="read-btn" onclick="openModal('Neural Networks', 'Neural networks are a series of algorithms that endeavor to recognize underlying relationships in a set of data through a process that mimics the way the human brain operates.', 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1000')">Read Article &rarr;</button>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <div class="modal-overlay" id="articleModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <img src="" alt="" class="modal-img" id="modalImg">
+            <div class="modal-body">
+                <h2 id="modalTitle"></h2>
+                <p class="modal-text" id="modalText"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('haza_user'));
+        const authBtn = document.getElementById('authBtn');
+        if (user) {
+            authBtn.innerText = user.name;
+            authBtn.href = (user.role === 'OWNER') ? 'owner.html' : 'editor.html';
+        }
+
+        const modal = document.getElementById('articleModal');
+        const mTitle = document.getElementById('modalTitle');
+        const mText = document.getElementById('modalText');
+        const mImg = document.getElementById('modalImg');
+
+        function openModal(title, text, imgUrl) {
+            mTitle.innerText = title; mText.innerText = text; mImg.src = imgUrl;
+            modal.classList.add('active'); document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            modal.classList.remove('active'); document.body.style.overflow = 'auto';
+        }
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        const geometry = new THREE.SphereGeometry(1.5, 32, 32);
+        const material = new THREE.MeshBasicMaterial({ color: 0x6366f1 });
+        const sphere1 = new THREE.Mesh(geometry, material);
+        const sphere2 = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x06b6d4 }));
+        sphere1.position.set(-3, 0, 0); sphere2.position.set(3, 2, -2);
+        scene.add(sphere1); scene.add(sphere2); camera.position.z = 6;
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate); time += 0.01;
+            sphere1.position.y = Math.sin(time) * 1.5; sphere2.position.y = Math.cos(time * 0.8) * 1.5;
+            renderer.render(scene, camera);
+        }
+        animate();
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Community Articles - HAZA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6366f1; --glass-bg: rgba(255, 255, 255, 0.03); --glass-border: rgba(255, 255, 255, 0.08); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
+        body { background-color: #020204; color: #fff; min-height: 100vh; }
+        
+        .glass-nav { position: fixed; top: 0; width: 100%; padding: 1.2rem 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border); z-index: 100; flex-wrap: wrap; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 8rem 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+        .glass-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 2rem; transition: 0.3s; }
+        .glass-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .author { font-size: 0.8rem; color: var(--primary); text-transform: uppercase; margin-bottom: 10px; display: block; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: #111; padding: 2rem; border-radius: 20px; width: 100%; max-width: 600px; border: 1px solid #333; position: relative; animation: popUp 0.4s ease forwards; max-height: 80vh; overflow-y: auto; }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* --- MOBILE --- */
+        @media (max-width: 768px) {
+            .glass-nav { padding: 1rem; flex-direction: column; gap: 10px; }
+            .container { padding: 1rem; padding-top: 10rem; }
+            .grid { grid-template-columns: 1fr; }
+            h1 { font-size: 2rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="glass-nav">
+        <h3 style="font-size: 1.5rem; font-weight: bold;">HAZA <span>COMMUNITY</span></h3>
+        <a href="index.html" style="color: #fff; text-decoration: none;">Back Home</a>
+    </nav>
+    <div class="container">
+        <h1 style="margin-bottom: 2rem; font-size: 3rem;">Community <span style="color:var(--primary)">Voices</span></h1>
+        <div class="grid" id="community-grid">
+            <p>Loading articles from HAZA Cloud...</p>
+        </div>
+    </div>
+    <div class="modal-overlay" id="commModal">
+        <div class="modal-content">
+            <button id="closeModalBtn" style="position:absolute; top:15px; right:15px; background:none; border:none; color:#fff; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <h2 id="cTitle" style="margin-bottom:1rem; color:var(--primary);"></h2>
+            <p id="cAuthor" style="color:#666; font-size:0.9rem; margin-bottom:1rem;"></p>
+            <p id="cBody" style="line-height:1.6; color:#ccc; white-space: pre-wrap;"></p>
+        </div>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- PASTE YOUR CONFIG HERE ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCiUPmia8ghmmIqvYnLI1buFlHwidIBUGQ",
+          authDomain: "haza-blogs-db.firebaseapp.com",
+          projectId: "haza-blogs-db",
+          storageBucket: "haza-blogs-db.firebasestorage.app",
+          messagingSenderId: "905964768932",
+          appId: "1:905964768932:web:fd7560575fe191cf7fa031",
+          measurementId: "G-T93VNP6D4D"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const grid = document.getElementById('community-grid');
+
+        document.getElementById('closeModalBtn').addEventListener('click', () => { document.getElementById('commModal').classList.remove('active'); });
+
+        async function loadCommunity() {
+            grid.innerHTML = "";
+            const q = query(collection(db, "articles"), where("status", "==", "approved"));
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) { grid.innerHTML = "<p>No approved articles yet.</p>"; } else {
+                querySnapshot.forEach((doc) => {
+                    const a = doc.data();
+                    const card = document.createElement('div');
+                    card.className = 'glass-card';
+                    const safeTitle = a.title.replace(/'/g, "\\'");
+                    const safeContent = a.content.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    card.innerHTML = `
+                        <span class="author">By ${a.author} | ${a.date}</span>
+                        <h3 style="font-size:1.5rem; margin-bottom:1rem;">${a.title}</h3>
+                        <p style="color:#999; margin-bottom:1.5rem;">${a.content.substring(0, 100)}...</p>
+                        <button class="read-more-btn" data-title="${safeTitle}" data-author="${a.author}" data-content="${safeContent}" style="background:none; border:1px solid #fff; color:#fff; padding:0.5rem 1rem; border-radius:20px; cursor:pointer;">Read Story</button>
+                    `;
+                    grid.appendChild(card);
+                });
+                document.querySelectorAll('.read-more-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.getElementById('cTitle').innerText = e.target.dataset.title;
+                        document.getElementById('cAuthor').innerText = "Written by " + e.target.dataset.author;
+                        document.getElementById('cBody').innerText = e.target.dataset.content.replace(/&quot;/g, '"');
+                        document.getElementById('commModal').classList.add('active');
+                    });
+                });
+            }
+        }
+        loadCommunity();
+    </script>
+</body>
+</html>

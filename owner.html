@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Owner Dashboard - HAZA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6366f1; --accent: #10b981; --danger: #ef4444; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
+        body { background-color: #020204; color: #fff; overflow-x: hidden; min-height: 100vh; }
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 4rem 2rem; position: relative; z-index: 10; }
+        
+        .dashboard-header { margin-bottom: 3rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; display: flex; justify-content: space-between;}
+        
+        /* Section Styles */
+        .section-title { font-size: 1.5rem; color: #aaa; margin-bottom: 1.5rem; border-left: 4px solid var(--primary); padding-left: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        .section-box { margin-bottom: 4rem; }
+
+        .article-row { 
+            background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; 
+            padding: 1.5rem; margin-bottom: 1rem; 
+            display: flex; justify-content: space-between; align-items: center; 
+            transition: 0.3s; 
+        }
+        .article-row:hover { transform: scale(1.01); border-color: rgba(255,255,255,0.3); }
+
+        .btn-group { display: flex; gap: 10px; }
+        
+        .btn { padding: 0.6rem 1.2rem; border-radius: 50px; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; color: #fff; }
+        .btn-approve { background: var(--accent); color: #000; }
+        .btn-approve:hover { box-shadow: 0 0 15px var(--accent); }
+        
+        .btn-delete { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-delete:hover { background: var(--danger); color: #fff; }
+
+        .empty-msg { color: #555; font-style: italic; }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+    
+    <div class="container">
+        <div class="dashboard-header">
+            <h1>Owner <span>Dashboard</span></h1>
+            <a href="index.html" style="color: #fff; text-decoration: none;">Exit</a>
+        </div>
+
+        <!-- Section 1: Pending -->
+        <div class="section-box">
+            <h2 class="section-title" style="border-color: #f59e0b;">For Approval (Pending)</h2>
+            <div id="pending-list">
+                <p class="empty-msg">Loading...</p>
+            </div>
+        </div>
+
+        <!-- Section 2: Approved -->
+        <div class="section-box">
+            <h2 class="section-title" style="border-color: #10b981;">Published Articles</h2>
+            <div id="approved-list">
+                <p class="empty-msg">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, updateDoc, doc, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // --- CONFIG ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCiUPmia8ghmmIqvYnLI1buFlHwidIBUGQ",
+          authDomain: "haza-blogs-db.firebaseapp.com",
+          projectId: "haza-blogs-db",
+          storageBucket: "haza-blogs-db.firebasestorage.app",
+          messagingSenderId: "905964768932",
+          appId: "1:905964768932:web:fd7560575fe191cf7fa031",
+          measurementId: "G-T93VNP6D4D"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Security Check
+        const user = JSON.parse(localStorage.getItem('haza_user'));
+        if(!user || user.role !== 'OWNER') { window.location.href = "login.html"; }
+
+        // --- ACTIONS ---
+        window.approveArticle = async function(id) {
+            if(!confirm("Approve this article?")) return;
+            try {
+                const articleRef = doc(db, "articles", id);
+                await updateDoc(articleRef, { status: "approved" });
+                alert("Approved!");
+                loadAllArticles();
+            } catch(e) { alert("Error: " + e.message); }
+        }
+
+        window.deleteArticle = async function(id) {
+            if(!confirm("Are you sure you want to DELETE this article? This cannot be undone.")) return;
+            try {
+                await deleteDoc(doc(db, "articles", id));
+                alert("Article Deleted.");
+                loadAllArticles();
+            } catch(e) { alert("Error: " + e.message); }
+        }
+
+        // --- LOAD DATA ---
+        async function loadAllArticles() {
+            const pendingList = document.getElementById('pending-list');
+            const approvedList = document.getElementById('approved-list');
+            
+            pendingList.innerHTML = "";
+            approvedList.innerHTML = "";
+
+            try {
+                // Get all articles
+                const q = query(collection(db, "articles"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+
+                let hasPending = false;
+                let hasApproved = false;
+
+                querySnapshot.forEach((docSnap) => {
+                    const article = docSnap.data();
+                    const id = docSnap.id;
+                    
+                    const div = document.createElement('div');
+                    div.className = 'article-row';
+                    
+                    // Common HTML structure
+                    const contentHTML = `
+                        <div class="info">
+                            <h3>${article.title}</h3>
+                            <p style="color:#aaa; font-size:0.9rem;">By ${article.author} | ${article.date}</p>
+                            <p style="color:#666; font-size:0.8rem;">${article.content.substring(0, 60)}...</p>
+                        </div>
+                    `;
+
+                    if(article.status === 'pending') {
+                        hasPending = true;
+                        div.innerHTML = contentHTML + `
+                            <div class="btn-group">
+                                <button class="btn btn-approve" onclick="approveArticle('${id}')">Approve</button>
+                                <button class="btn btn-delete" onclick="deleteArticle('${id}')">Reject/Delete</button>
+                            </div>
+                        `;
+                        pendingList.appendChild(div);
+                    } else if (article.status === 'approved') {
+                        hasApproved = true;
+                        div.innerHTML = contentHTML + `
+                            <div class="btn-group">
+                                <button class="btn btn-delete" onclick="deleteArticle('${id}')">Delete</button>
+                            </div>
+                        `;
+                        approvedList.appendChild(div);
+                    }
+                });
+
+                if(!hasPending) pendingList.innerHTML = "<p class='empty-msg'>No pending requests.</p>";
+                if(!hasApproved) approvedList.innerHTML = "<p class='empty-msg'>No published articles.</p>";
+
+            } catch (e) {
+                console.error(e);
+                pendingList.innerHTML = "<p style='color:red'>Error loading data. Check console.</p>";
+            }
+        }
+
+        loadAllArticles();
+
+        // 3D Background
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('bg-canvas'), alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        const geometry = new THREE.IcosahedronGeometry(2, 0);
+        const material = new THREE.MeshNormalMaterial({ wireframe: true });
+        const shape = new THREE.Mesh(geometry, material);
+        scene.add(shape); camera.position.z = 5;
+        function animate() { requestAnimationFrame(animate); shape.rotation.x += 0.005; shape.rotation.y += 0.005; renderer.render(scene, camera); }
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join - HAZA BLOGS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #6366f1; --glass-bg: rgba(255, 255, 255, 0.05); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
+        body { background-color: #020204; color: #fff; height: 100vh; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(circle at 50% 50%, #1e1b4b, #000); }
+        .glass-container { width: 100%; max-width: 400px; padding: 3rem; background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; text-align: center; }
+        h2 { margin-bottom: 2rem; font-size: 2rem; }
+        .input-group { margin-bottom: 1.5rem; text-align: left; }
+        label { display: block; margin-bottom: 0.5rem; color: #aaa; font-size: 0.9rem; }
+        input { width: 100%; padding: 0.8rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: #fff; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--primary); }
+        .btn-submit { width: 100%; padding: 1rem; border-radius: 12px; border: none; background: var(--primary); color: #fff; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-submit:hover { opacity: 0.9; transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <div class="glass-container">
+        <h2>Enter HAZA</h2>
+        <form id="authForm" onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="username" placeholder="Your Name" required>
+            </div>
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="admin@haza.com for owner" required>
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-submit">Join Now</button>
+        </form>
+        <p style="margin-top:20px; font-size: 0.8rem;"><a href="index.html" style="color:#fff; text-decoration:none;">&larr; Back to Home</a></p>
+    </div>
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            let role = 'USER';
+            if(email === 'admin@haza.com') {
+                if(password === 'hazablogowner') { role = 'OWNER'; } 
+                else { alert("Access Denied! Incorrect Owner Password."); return; }
+            }
+            const user = { name: name, email: email, role: role };
+            localStorage.setItem('haza_user', JSON.stringify(user));
+            if(role === 'OWNER') { window.location.href = "owner.html"; } 
+            else { window.location.href = "editor.html"; }
+        }
+    </script>
+</body>
+</html>
